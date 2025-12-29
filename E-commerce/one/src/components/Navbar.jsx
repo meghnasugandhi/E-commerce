@@ -1,7 +1,6 @@
 // src/components/Navbar.jsx
 import React from 'react';
-// 🚨 STEP 1: Link component is already imported
-import { Link } from 'react-router-dom'; 
+import { Link, useLocation } from 'react-router-dom'; // Added useLocation
 import { 
     Navbar, 
     Nav, 
@@ -17,14 +16,11 @@ import {
     FaTags, 
     FaHeadset, 
     FaPlus,
-    FaAngleDown,
     FaAngleRight 
 } from 'react-icons/fa'; 
 
-// Assuming this image path is correct in your project structure
 import megaMenuBannerImage from '../images/banner-menu.png'; 
 
-// --- MODIFIED: Update homeLinks to use the correct path format ---
 const homeLinks = [
     { name: "Home 1", path: "/home/Home1" },
     { name: "Home 2", path: "/home/Home2" },
@@ -34,12 +30,10 @@ const homeLinks = [
     { name: "Home 6", path: "/home/Home6" },
 ];
 
-// --- ✅ MODIFIED: The complete pagesLinks array with React Router paths ---
 const pagesLinks = [
-    // Matches the image order
     { name: "About Us", path: "/pages/about-us" },
     { name: "Contact", path: "/pages/contact" },
-    { name: "My Account", path: "/account/my-account" },
+    { name: "My Account", path: "/account" },
     { name: "Login", path: "/account/login" },
     { name: "Register", path: "/account/register" },
     { name: "Forgot password", path: "/account/forgot-password" },
@@ -50,7 +44,6 @@ const pagesLinks = [
     { name: "404 Page", path: "/404" },
 ];
 
-// ... (rest of blogLinks, vendorLinks, shopLinks, categories, megaMenuContent data arrays remain the same)
 const blogLinks = [
     { name: "Blog Category Grid", link: "#blog/category/grid" },
     { name: "Blog Category List", link: "#blog/category/list" },
@@ -132,10 +125,20 @@ const megaMenuContent = [
     }
 ];
 
-
 const CustomNavbar = () => {
+    // Get current location for active state tracking
+    const location = useLocation();
     
-    // ... (Your existing styles remain the same)
+    // Helper function to check if a path is active (exact match)
+    const isActive = (path) => {
+        return location.pathname === path;
+    };
+    
+    // Helper function to check if it's a home page
+    const isHomeActive = () => {
+        return location.pathname.startsWith('/home/');
+    };
+
     const categoryMenuStyle = {
         padding: '15px',
         border: '1px solid #ddd',
@@ -245,11 +248,15 @@ const CustomNavbar = () => {
                                 variant="success" 
                                 id="categories-dropdown"
                                 className="d-flex align-items-center"
-                                style={{ backgroundColor: '#28a745', borderColor: '#28a745', fontWeight: 'bold' }}
+                                style={{ 
+                                    backgroundColor: '#28a745', 
+                                    borderColor: '#28a745', 
+                                    fontWeight: 'bold',
+                                    '--bs-btn-dropdown-toggle-pseudo-after': 'none'
+                                }}
                             >
                                 <FaThList className="me-2" /> 
                                 Browse All Categories
-                                <FaAngleDown className="ms-2" /> 
                             </Dropdown.Toggle>
 
                             <Dropdown.Menu style={categoryMenuStyle}>
@@ -282,15 +289,15 @@ const CustomNavbar = () => {
                         <Navbar.Collapse id="basic-navbar-nav">
                             <Nav className="w-100 justify-content-between align-items-center">
                                 <div className="d-flex align-items-center">
-                                    {/* Deals Link */}
-                                    <Nav.Link href="#deals" className="d-flex align-items-center me-3" style={{ color: '#28a745', fontWeight: 'bold' }}>
+                                    {/* Deals Link - ALWAYS BLACK, never green */}
+                                    <Nav.Link href="#deals" className="d-flex align-items-center me-3" style={{ color: 'black', fontWeight: 'bold' }}>
                                         <FaTags className="me-2" />
                                         **Deals**
                                     </Nav.Link>
 
-                                    {/* Home Dropdown using Link */}
+                                    {/* Home Dropdown - Green only when on home page */}
                                     <NavDropdown 
-                                        title={<span style={{ color: '#28a745', fontWeight: 'bold' }}>Home</span>} 
+                                        title={<span style={{ color: isHomeActive() ? '#28a745' : '#333', fontWeight: 'bold' }}>Home</span>} 
                                         id="home-dropdown" 
                                         className="me-3" 
                                         menuVariant="light"
@@ -298,27 +305,31 @@ const CustomNavbar = () => {
                                     >
                                         <div style={menuContainerStyle}>
                                             {homeLinks.map((item, index) => (
-                                                // Link implementation
                                                 <NavDropdown.Item 
                                                     key={index} 
                                                     as={Link} 
                                                     to={item.path} 
-                                                    style={menuItemStyle}
+                                                    style={{
+                                                        ...menuItemStyle,
+                                                        color: isActive(item.path) ? '#28a745' : '#333',
+                                                        fontWeight: isActive(item.path) ? 'bold' : '500'
+                                                    }}
                                                     onMouseOver={e => e.currentTarget.style.backgroundColor = '#f1f1f1'}
                                                     onMouseOut={e => e.currentTarget.style.backgroundColor = 'white'}
                                                 >
                                                     {item.name}
+                                                    {isActive(item.path) && <span style={{ color: '#28a745' }}> ✓</span>}
                                                 </NavDropdown.Item>
                                             ))}
                                         </div>
                                     </NavDropdown>
 
                                     {/* Regular Links */}
-                                    <Nav.Link href="#about" className="me-3" style={{ color: 'black', fontWeight: 'bold' }}>About</Nav.Link>
                                     
-                                    {/* Shop Dropdown */}
+                                    
+                                    {/* Shop Dropdown - ALWAYS BLACK */}
                                     <NavDropdown 
-                                        title="Shop" 
+                                        title={<span style={{ color: '#333', fontWeight: 'bold' }}>Shop</span>} 
                                         id="shop-dropdown" 
                                         className="me-3" 
                                         style={{ fontWeight: 'bold' }}
@@ -340,9 +351,9 @@ const CustomNavbar = () => {
                                         </div>
                                     </NavDropdown>
 
-                                    {/* VENDORS Dropdown */}
+                                    {/* VENDORS Dropdown - ALWAYS BLACK */}
                                     <NavDropdown 
-                                        title="Vendors" 
+                                        title={<span style={{ color: '#333', fontWeight: 'bold' }}>Vendors</span>} 
                                         id="vendors-dropdown" 
                                         className="me-3" 
                                         style={{ fontWeight: 'bold' }}
@@ -363,9 +374,9 @@ const CustomNavbar = () => {
                                         </div>
                                     </NavDropdown>
                                     
-                                    {/* MEGA MENU Dropdown */}
+                                    {/* MEGA MENU Dropdown - ALWAYS BLACK */}
                                     <NavDropdown 
-                                        title="Mega menu" 
+                                        title={<span style={{ color: '#333', fontWeight: 'bold' }}>Mega menu</span>} 
                                         id="mega-menu-dropdown" 
                                         className="me-3 position-static" 
                                         style={{ fontWeight: 'bold' }}
@@ -426,9 +437,9 @@ const CustomNavbar = () => {
                                         </Dropdown.Menu>
                                     </NavDropdown>
                                     
-                                    {/* BLOG Dropdown */}
+                                    {/* BLOG Dropdown - ALWAYS BLACK */}
                                     <NavDropdown 
-                                        title="Blog" 
+                                        title={<span style={{ color: '#333', fontWeight: 'bold' }}>Blog</span>} 
                                         id="blog-dropdown" 
                                         className="me-3" 
                                         style={{ fontWeight: 'bold' }}
@@ -450,9 +461,12 @@ const CustomNavbar = () => {
                                         </div>
                                     </NavDropdown>
 
-                                    {/* PAGES Dropdown - UPDATED TO USE REACT ROUTER LINK */}
+                                    {/* PAGES Dropdown - Green only when on a pages route */}
                                     <NavDropdown 
-                                        title={<span style={{ fontWeight: 'bold', color: '#28a745' }}>Pages</span>} 
+                                        title={<span style={{ 
+                                            color: pagesLinks.some(item => isActive(item.path)) ? '#28a745' : '#333', 
+                                            fontWeight: 'bold' 
+                                        }}>Pages</span>} 
                                         id="pages-dropdown" 
                                         className="me-3" 
                                         style={{ fontWeight: 'bold' }}
@@ -460,36 +474,63 @@ const CustomNavbar = () => {
                                     >
                                         <div style={menuContainerStyle}>
                                             {pagesLinks.map((item, index) => (
-                                                // 🚨 KEY CHANGE: Using as={Link} and the 'to' prop
                                                 <NavDropdown.Item 
                                                     key={index} 
-                                                    as={Link} // Use Link component
-                                                    to={item.path} // Use the correct path 
-                                                    style={menuItemStyle}
+                                                    as={Link}
+                                                    to={item.path}
+                                                    style={{
+                                                        ...menuItemStyle,
+                                                        color: isActive(item.path) ? '#28a745' : '#333',
+                                                        fontWeight: isActive(item.path) ? 'bold' : '500'
+                                                    }}
                                                     onMouseOver={e => e.currentTarget.style.backgroundColor = '#f1f1f1'}
                                                     onMouseOut={e => e.currentTarget.style.backgroundColor = 'white'}
                                                 >
                                                     {item.name}
+                                                    {isActive(item.path) && <span style={{ color: '#28a745' }}> ✓</span>}
                                                 </NavDropdown.Item>
                                             ))}
                                         </div>
                                     </NavDropdown>
 
-                                    <Nav.Link href="#contact" className="me-3" style={{ color: 'black', fontWeight: 'bold' }}>Contact</Nav.Link>
+                                    {/* Contact Link - Green only when on /pages/contact */}
+                                    <Nav.Link 
+                                        as={Link} 
+                                        to="/pages/contact" 
+                                        className="me-3" 
+                                        style={{ 
+                                            color: isActive('/pages/contact') ? '#28a745' : 'black', 
+                                            fontWeight: 'bold' 
+                                        }}
+                                    >
+                                        Contact
+                                        {isActive('/pages/contact') && <span style={{ color: '#28a745', marginLeft: '5px' }}>•</span>}
+                                    </Nav.Link>
                                 </div>
                             </Nav>
                         </Navbar.Collapse>
                     </Col>
 
-                    {/* Right Section - Support Center */}
+                    {/* Right Section - Support Center - FIXED to prevent dropdown */}
                     <Col lg="auto" className="ps-0">
                         <div className="d-flex align-items-center justify-content-end">
                             <FaHeadset size={30} style={{ color: '#28a745' }} />
                             <div className="ms-3 text-end">
-                                <div style={{ fontSize: '1.5rem', color: '#28a745', fontWeight: 'bolder', lineHeight: '1' }}>
+                                {/* Wrapped in a div with pointer-events: none to prevent dropdown */}
+                                <div style={{ 
+                                    fontSize: '1.5rem', 
+                                    color: '#28a745', 
+                                    fontWeight: 'bolder', 
+                                    lineHeight: '1',
+                                    pointerEvents: 'none'  // This prevents any dropdown interaction
+                                }}>
                                     **1900 - 888**
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>
+                                <div style={{ 
+                                    fontSize: '0.75rem', 
+                                    color: '#6c757d',
+                                    pointerEvents: 'none'  // This prevents any dropdown interaction
+                                }}>
                                     24/7 Support Center
                                 </div>
                             </div>
@@ -497,6 +538,44 @@ const CustomNavbar = () => {
                     </Col> 
                 </Row>
             </Container>
+            
+            {/* Add custom CSS to prevent dropdown arrows from appearing */}
+            <style>{`
+                /* Remove all dropdown arrows from Bootstrap */
+                .dropdown-toggle::after {
+                    display: none !important;
+                }
+                
+                /* Prevent any dropdown behavior on the support center */
+                #basic-navbar-nav .nav-link,
+                #basic-navbar-nav .dropdown-toggle {
+                    position: relative;
+                    z-index: 1;
+                }
+                
+                /* Ensure support center is not affected by dropdowns */
+                .ps-0 .d-flex {
+                    position: relative;
+                    z-index: 1000;
+                }
+                
+                /* Make sure support center text doesn't trigger dropdowns */
+                .text-end div {
+                    cursor: default !important;
+                }
+                
+                /* Highlight active nav items */
+                .nav-link.active {
+                    color: #28a745 !important;
+                }
+                
+                /* Highlight active dropdown items */
+                .dropdown-item.active {
+                    color: #28a745 !important;
+                    font-weight: bold !important;
+                    background-color: #f1f8e9 !important;
+                }
+            `}</style>
         </Navbar>
     );
 };

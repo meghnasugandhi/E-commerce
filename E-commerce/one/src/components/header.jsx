@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import Container from 'react-bootstrap/Container';
 import Form from 'react-bootstrap/Form';
 import InputGroup from 'react-bootstrap/InputGroup';
 import Button from 'react-bootstrap/Button';
 import Dropdown from 'react-bootstrap/Dropdown'; 
 import { Link } from 'react-router-dom'; 
-import { FaSearch, FaHeart, FaShoppingCart, FaUser, FaBalanceScale, FaUserCircle, FaMapMarkerAlt, FaTag, FaHeart as FaHeartOutline, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { 
+    FaSearch, FaHeart, FaShoppingCart, FaUser, 
+    FaBalanceScale, FaUserCircle, FaMapMarkerAlt, 
+    FaTag, FaHeart as FaHeartOutline, FaCog, FaSignOutAlt 
+} from 'react-icons/fa';
 import Logo from '../images/logo.svg'; 
-// import MyAccount from '../pages/MyAccount'; 
 
-// ----------------------------------------------------------------------
-// 1. Helper Function for generic icon links
-// ----------------------------------------------------------------------
+// --- Redux Selectors ---
+export const selectCartCount = (state) => state.cart.count;
+export const selectWishlistCount = (state) => state.wishlist.count;
 
+// --- Helper for Badge Icons ---
 const renderIconLink = (IconComponent, label, badgeCount, LinkComponent, path) => (
     <div className="d-flex flex-column align-items-center text-dark mx-3 text-decoration-none">
         <LinkComponent to={path} className="text-dark text-decoration-none d-flex flex-column align-items-center">
@@ -30,16 +35,13 @@ const renderIconLink = (IconComponent, label, badgeCount, LinkComponent, path) =
     </div>
 );
 
-// ----------------------------------------------------------------------
-// 2. Custom Dropdown Toggle for Account Icon
-// ----------------------------------------------------------------------
-
+// --- Custom Toggle for Account ---
 const CustomToggle = React.forwardRef(({ children, onClick }, ref) => (
     <div
         ref={ref}
         onClick={onClick} 
         className="d-flex flex-column align-items-center text-dark mx-3 text-decoration-none cursor-pointer"
-        style={{ userSelect: 'none' }} 
+        style={{ userSelect: 'none', cursor: 'pointer' }} 
     >
         <span className="position-relative">
             <FaUser size={20} color="#28a745" />
@@ -49,40 +51,36 @@ const CustomToggle = React.forwardRef(({ children, onClick }, ref) => (
 ));
 CustomToggle.displayName = 'CustomToggle'; 
 
-// ----------------------------------------------------------------------
-// 3. Account Dropdown Component with Hover Logic (Optimized for Stability)
-// ----------------------------------------------------------------------
-
+// --- ✅ FIXED: Account Dropdown Component (NO VENDOR ITEMS) ---
 const AccountDropdown = () => {
     const [show, setShow] = useState(false);
     
+    // ✅ CORRECTED: Only Account-related items, NO vendor items
     const dropdownItems = [
         { icon: FaUserCircle, label: 'My Account', path: '/account' },
         { icon: FaMapMarkerAlt, label: 'Order Tracking', path: '/orders' },
         { icon: FaTag, label: 'My Voucher', path: '/vouchers' },
         { icon: FaHeartOutline, label: 'My Wishlist', path: '/wishlist' },
-        { icon: FaCog, label: 'Setting', path: '/settings' },
-        { icon: FaSignOutAlt, label: 'Sign out', path: '/sign-out' },
+        { icon: FaCog, label: 'Settings', path: '/settings' },
+        { icon: FaSignOutAlt, label: 'Sign out', path: '/logout' },
     ];
 
     return (
         <Dropdown 
             show={show} 
             onToggle={(isOpen) => setShow(isOpen)} 
-            onMouseEnter={() => setShow(true)}
-            onMouseLeave={() => setShow(false)}
             align="end" 
             as="span" 
         >
             <Dropdown.Toggle as={CustomToggle} id="account-dropdown-toggle" />
 
             <Dropdown.Menu 
-                className="shadow border-0 py-2" // Added py-2 for padding
+                className="shadow border-0 py-2" 
                 style={{ 
                     minWidth: '200px', 
-                    marginTop: '0 !important', // ⭐ REMOVED VERTICAL GAP
+                    marginTop: '5px',
                     position: 'absolute',
-                    zIndex: 1050
+                    zIndex: 2000
                 }} 
             >
                 {dropdownItems.map((item, index) => (
@@ -91,6 +89,9 @@ const AccountDropdown = () => {
                         as={Link} 
                         to={item.path} 
                         className="d-flex align-items-center py-2"
+                        style={{ transition: 'background-color 0.2s' }}
+                        onMouseOver={e => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                        onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
                         {React.createElement(item.icon, { className: 'me-3', size: 18, color: '#6c757d' })}
                         {item.label}
@@ -101,13 +102,13 @@ const AccountDropdown = () => {
     );
 };
 
-// ----------------------------------------------------------------------
-// 4. Main Header Component
-// ----------------------------------------------------------------------
-
+// --- Main Header Component ---
 const Header = () => {
+    const cartCount = useSelector(selectCartCount); 
+    const wishlistCount = useSelector(selectWishlistCount);
+
     return (
-        <div className="bg-white py-3 border-bottom">
+        <div className="bg-white py-3 border-bottom sticky-top" style={{ zIndex: 1000 }}>
             <Container fluid className="px-5">
                 <div className="d-flex justify-content-between align-items-center">
                     
@@ -120,12 +121,16 @@ const Header = () => {
                     <div className="d-none d-lg-flex w-100 mx-5"> 
                         <Form className="d-flex w-100 justify-content-center">
                             <InputGroup style={{ maxWidth: '600px', height: '45px' }}>
-                                <Dropdown as={InputGroup.Append}>
+                                <Dropdown>
                                     <Dropdown.Toggle 
                                         variant="light" 
-                                        id="dropdown-basic" 
                                         className="border-end-0"
-                                        style={{ backgroundColor: '#f5f5f5', borderTopLeftRadius: '0.25rem', borderBottomLeftRadius: '0.25rem', padding: '0.375rem 1.5rem' }}
+                                        style={{ 
+                                            backgroundColor: '#f5f5f5', 
+                                            borderTopRightRadius: '0', 
+                                            borderBottomRightRadius: '0', 
+                                            padding: '0.375rem 1.5rem' 
+                                        }}
                                     >
                                         All Categories
                                     </Dropdown.Toggle>
@@ -144,21 +149,23 @@ const Header = () => {
                                     className="border-start-0"
                                     style={{ borderLeft: 'none' }}
                                 />
-                                <Button variant="outline-success" type="submit" 
-                                            style={{ border: '1px solid #28a745', borderLeft: 'none', backgroundColor: '#fff' }}>
+                                <Button 
+                                    variant="outline-success" 
+                                    type="submit" 
+                                    style={{ border: '1px solid #28a745', borderLeft: 'none', backgroundColor: '#fff' }}
+                                >
                                     <FaSearch />
                                 </Button>
                             </InputGroup>
                         </Form>
                     </div>
 
-                    {/* Icons */}
+                    {/* Icons & Account */}
                     <div className="d-flex align-items-center ms-auto">
                         {renderIconLink(<FaBalanceScale />, 'Compare', 0, Link, '/compare')}
-                        {renderIconLink(<FaHeart />, 'Wishlist', 15, Link, '/wishlist')}
-                        {renderIconLink(<FaShoppingCart />, 'Cart', 2, Link, '/cart')} 
+                        {renderIconLink(<FaHeart />, 'Wishlist', wishlistCount, Link, '/wishlist')}
+                        {renderIconLink(<FaShoppingCart />, 'Cart', cartCount, Link, '/cart')} 
                         
-                        {/* Account Dropdown is inserted here */}
                         <AccountDropdown /> 
                     </div>
 

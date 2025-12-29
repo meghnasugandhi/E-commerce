@@ -1,15 +1,14 @@
 // E-commerce/Backend/server.js
 
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
+// 1. Core package imports (Note: no .js extension needed for packages)
+import express from 'express';
+import bodyParser from 'body-parser'; 
+import cors from 'cors';
 
-// Import your existing routers
-const loginRouter = require('./routes/login');
-const registerRouter = require('./routes/register'); 
-
-// Import the new account router
-const accountRouter = require('./routes/account'); // <--- NEW IMPORT
+// 2. Local module imports (MUST include the .js extension)
+import loginRouter from './routes/login.js';        // <--- .js added
+import registerRouter from './routes/register.js';    // <--- .js added
+import accountRouter from './routes/account.js';      // <--- .js added
 
 const app = express();
 const PORT = 5000; 
@@ -24,8 +23,7 @@ app.use('/api', loginRouter);
 app.use('/api', registerRouter); 
 
 // New route for all account-related operations
-// You can structure this to require authentication middleware in a real app
-app.use('/api/account', accountRouter); // <--- NEW ACCOUNT ROUTE
+app.use('/api/account', accountRouter); 
 
 // --- Server Startup ---
 app.listen(PORT, () => {

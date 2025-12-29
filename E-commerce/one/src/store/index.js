@@ -1,17 +1,16 @@
-
-
-
 import { configureStore } from '@reduxjs/toolkit';
-import cartReducer from './slices/cartSlice'; // Make sure the path is correct
+import cartReducer from './slices/cartSlice'; 
+import wishlistReducer from './slices/wishlistSlice'; // This import is used now
 
 /**
  * Configure the Redux store.
- * The 'cart' state property will be managed by cartReducer.
+ * The 'cart' and 'wishlist' state properties will be managed by their respective reducers.
  */
 const store = configureStore({
     reducer: {
-        cart: cartReducer, // The key 'cart' is how you access the state (e.g., state.cart.items)
-        // Add other reducers here as your app grows
+        cart: cartReducer, 
+        // ⭐ ADDED THE WISHLIST REDUCER HERE
+        wishlist: wishlistReducer, // The key 'wishlist' is how you access the state (e.g., state.wishlist.items)
     },
     // Redux Toolkit includes thunk and DevTools extension support by default
 });

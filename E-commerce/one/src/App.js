@@ -1,7 +1,6 @@
-// src/App.jsx
+// src/App.jsx - CORRECTED
 
 import React from 'react';
-// 🚨 IMPORTANT: Add 'Navigate' and ensure 'BrowserRouter as Router' is present
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'; 
 
 // Import Layout Components
@@ -9,70 +8,78 @@ import Header from './components/header.jsx';
 import CustomNavbar from './components/Navbar.jsx'; 
 import Footer from './components/footer.jsx'; 
 
-// 🚨 STEP 1: IMPORT THE NEW HOME VERSIONS MANAGER
-// This component now handles which of the 6 UIs to display based on the URL.
+// Import Page Components
 import HomeVersions from './components/HomeVersions.jsx'; 
-
-// Import the Cart Page
 import CartPage from './pages/cart.jsx'; 
 import MyAccount from './pages/MyAccount.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
+import Wishlist from './pages/Wishlist.jsx';
+import ProductCompare from './pages/ProductCompare.jsx';
+import ForgotPasswordUI from './pages/ForgotPasswordUI.jsx';
+import Contact from './pages/Contact.jsx'; // Contact Page
 
-// 🚨 STEP 2: REMOVE all the individual home content imports (MainContent, PopularProducts, etc.)
-// They are now only used inside HomeVersions.jsx
-// import MainContent from './components/main.jsx'; // REMOVE
-// import FeaturedCategory from './components/featuredcategory.jsx'; // REMOVE
-// ... etc.
 
 function App() {
-  return (
-    <Router> 
-      <div className="App">
-        {/* Header and Navbar stay here, outside of Routes */}
-        <Header/>
-        <CustomNavbar/>
+    return (
+        <Router> 
+            <div className="App">
+                <Header/>
+                <CustomNavbar/>
 
-        <Routes>
-          
-          {/* 🚨 NEW ROUTE 1: Dynamic Home Route */}
-          {/* This route captures the requested version (e.g., 'Home1', 'Home2') */}
-          <Route 
-            path="/home/:version" 
-            element={<HomeVersions />} 
-          />
-          
-          {/* 🚨 NEW ROUTE 2: Base Path Redirect */}
-          {/* If the user types just /, they are automatically redirected to /home/Home1 */}
-          <Route 
-            path="/" 
-            element={<Navigate to="/home/Home1" replace />} 
+                <Routes>
+                    <Route path="/pages/contact" element={<Contact />} />
+                    
+                    {/* 1. Base Path Redirect: / redirects to /home/Home1 */}
+                    <Route 
+                        path="/" 
+                        element={<Navigate to="/home/Home1" replace />} 
+                    />
+                    
+                    {/* 2. Dynamic Home Route: Handles /home/Home1, /home/Home2, etc. */}
+                    <Route 
+                        path="/home/:version" 
+                        element={<HomeVersions />} 
+                    />
+
+                    {/* 3. CORE FIX: Account Dashboard Route (Must be uncommented and clean) */}
+                    <Route 
+                        path="/account" 
+                        element={<MyAccount />} 
+                    />
+                    
+                    {/* 4. Login and Register Pages (Adjusted to use clean paths /login and /register) */}
+                    {/* NOTE: If you must use /account/login and /account/register, keep those paths. */}
+                    <Route path="/login" element={<Login/>} />
+                    <Route path="/register" element={<Register/>} />
+
+                    {/* Redirection for old paths, if needed: */}
+                    <Route path="/account/login" element={<Navigate to="/login" replace />} />
+                    <Route path="/account/register" element={<Navigate to="/register" replace />} />
             
-          />
-          <Route path="/account" element={<MyAccount />} />
-          <Route path="/account/login" element={<Login/>} />
-          <Route path="/account/register" element={<Register/>} />
-   
-          {/* Keep the Cart Route as it is */}
-          <Route 
-            path="/cart" 
-            element={<CartPage />} 
-          />
-          <Route 
-            path="/account" 
-            element={<MyAccount />} 
-          />
+                    {/* 5. Cart Route */}
+                    <Route 
+                        path="/cart" 
+                        element={<CartPage />} 
+                    />
+                    <Route path="/wishlist" element={<Wishlist />} />
+                    <Route 
+                        path="/compare" 
+                        element={<ProductCompare />} 
+                    />
+                    <Route 
+                        path="/account/forgot-password"
+                        element={<ForgotPasswordUI />} 
+                    />
+                    
+                    {/* 6. Fallback Route for 404 Not Found */}
+                  
+                </Routes>
 
-           
-          {/* Add routes for other pages (like /account, /wishlist, /compare) here */}
-
-        </Routes>
-
-        {/* Footer stays here, outside of Routes */}
-        <Footer/>
-      </div>
-    </Router>
-  );
+                <Footer/>
+            </div>
+        </Router>
+    );
 }
 
 export default App;

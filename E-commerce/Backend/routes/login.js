@@ -1,59 +1,68 @@
-// login.js
+import express from 'express';
+import jwt from 'jsonwebtoken'; // 1. Import JWT
+import { query } from '../services/db.service.js';
 
-const express = require('express');
 const router = express.Router();
 
-// --- Simple Mock Database/User Store ---
-const MOCK_USER = {
-    username: 'testuser',
-    email: 'test@example.com',
-    password: 'password123' // REMINDER: Use a hashing library like bcrypt in production!
-};
-
-// Hardcoded CAPTCHA value from your frontend for simulation
-const CAPTCHA_CODE = '8675'; 
-
-// --- API Endpoint: POST /api/login ---
-router.post('/login', (req, res) => {
-    const { usernameOrEmail, password, securityCode } = req.body;
+router.post('/login', async (req, res) => {
+    const { usernameOrEmail, password } = req.body; 
     
-    // Basic input validation
-    if (!usernameOrEmail || !password || !securityCode) {
+    if (!usernameOrEmail || !password) {
         return res.status(400).json({ 
             success: false, 
-            message: 'All fields are required.' 
+            message: 'Username/Email and password are required.' 
         });
     }
 
-    // 1. CAPTCHA Validation
-    if (securityCode !== CAPTCHA_CODE) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Invalid security code. Please check the CAPTCHA.' 
-        });
-    }
+    try {
+        const sql = 'SELECT id, username, email, password_hash FROM users WHERE username = ? OR email = ?';
+        const users = await query(sql, [usernameOrEmail, usernameOrEmail]);
+        
+        const user = users[0];
 
-    // 2. User Authentication
-    const isMatch = (
-        (usernameOrEmail === MOCK_USER.username || usernameOrEmail === MOCK_USER.email) &&
-        password === MOCK_USER.password
-    );
+        if (!user) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid username/email or password.' 
+            });
+        }
 
-    if (isMatch) {
-        // Successful login
-        // In a real app, you'd generate a JWT token here and send it back.
-        return res.status(200).json({ 
-            success: true, 
-            message: 'Login successful! Welcome back.',
-            user: { username: MOCK_USER.username, email: MOCK_USER.email }
-        });
-    } else {
-        // Failed login
-        return res.status(401).json({ 
+        // --- PLAINTEXT COMPARISON ---
+        const isPasswordValid = (password === user.password_hash);
+
+        if (isPasswordValid) {
+            // 2. Generate the JWT Token
+            // We hide the user ID and username inside the token
+            const token = jwt.sign(
+                { id: user.id, username: user.username }, 
+                process.env.JWT_SECRET, // Make sure this is in your .env file
+                { expiresIn: '24h' }    // Token valid for 24 hours
+            );
+
+            // 3. Send the token back to the frontend
+            return res.status(200).json({ 
+                success: true, 
+                message: 'Login successful! Welcome back.',
+                token: token, // <--- The frontend will save this
+                user: { 
+                    id: user.id, 
+                    username: user.username, 
+                    email: user.email 
+                }
+            });
+        } else {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid username/email or password.' 
+            });
+        }
+    } catch (error) {
+        console.error("❌ Login route database error:", error.message);
+        return res.status(500).json({ 
             success: false, 
-            message: 'Invalid username/email or password.' 
+            message: 'An internal server error occurred.' 
         });
     }
 });
 
-module.exports = router;
+export default router;

@@ -1,18 +1,10 @@
-// E-commerce/Backend/routes/register.js
+import express from 'express'; 
+import jwt from 'jsonwebtoken'; // 1. Import JWT
+import { query } from '../services/db.service.js';
 
-const express = require('express');
 const router = express.Router();
 
-// ⚠️ Note: In a real-world application, you would:
-// 1. Hash the password (e.g., using bcrypt).
-// 2. Validate the email/username is unique in your database.
-// 3. Save the new user's details to the database (MongoDB, PostgreSQL, etc.).
-// 4. Implement proper error handling and send meaningful status codes.
-
-// Mock Database (Replace this with actual database integration)
-const users = []; 
-
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
     const { 
         username, 
         email, 
@@ -23,11 +15,11 @@ router.post('/register', (req, res) => {
         agreedToTerms 
     } = req.body;
 
-    const actualSecurityCode = '8675'; // Matches the frontend logic
+    const actualSecurityCode = '8675';
 
-    // Basic Server-Side Validation
-    if (!username || !email || !password || !confirmPassword || !securityCode) {
-        return res.status(400).json({ message: 'All fields are required.' });
+    // --- Server-Side Validation ---
+    if (!username || !email || !password || !confirmPassword || !securityCode || !userType) {
+        return res.status(400).json({ message: 'All required fields are missing.' });
     }
     
     if (password !== confirmPassword) {
@@ -42,35 +34,59 @@ router.post('/register', (req, res) => {
         return res.status(400).json({ message: 'You must agree to terms & Policy.' });
     }
 
-    // Check if user already exists (Mock check)
-    if (users.find(user => user.email === email)) {
-        return res.status(409).json({ message: 'User with this email already exists.' });
+    try {
+        // 1. Check if user already exists
+        const existingUsers = await query('SELECT id FROM users WHERE email = ?', [email]);
+
+        if (existingUsers.length > 0) {
+            return res.status(409).json({ message: 'User with this email already exists.' });
+        }
+        
+        // 2. Prepare the plain password for insertion
+        const plainPassword = password;
+
+        // 3. Save the new user to the database
+        const insertQuery = `
+            INSERT INTO users 
+            (username, email, password_hash, user_type) 
+            VALUES (?, ?, ?, ?)
+        `;
+        const values = [
+            username, 
+            email, 
+            plainPassword,
+            userType 
+        ];
+
+        const result = await query(insertQuery, values);
+
+        // 4. GENERATE JWT TOKEN
+        // We use the new ID from the database and the username provided
+        const token = jwt.sign(
+            { id: result.insertId, username: username }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '24h' }
+        );
+
+        console.log('New User Registered. Insert ID:', result.insertId);
+
+        // 5. Send success response INCLUDING the token
+        res.status(201).json({ 
+            success: true,
+            message: 'Account created successfully!', 
+            token: token, // <--- Add this
+            user: { 
+                id: result.insertId, 
+                username: username, 
+                email: email,
+                userType: userType
+            } 
+        });
+
+    } catch (error) {
+        console.error('Database registration error:', error);
+        res.status(500).json({ message: 'An internal server error occurred during registration.' });
     }
-
-    // Create the new user object (Mock Save)
-    const newUser = {
-        id: Date.now(), // Mock ID
-        username,
-        email,
-        // In production, save the HASHED password, not the raw one!
-        password, 
-        userType,
-        createdAt: new Date()
-    };
-    users.push(newUser); // Save to mock array
-
-    console.log('New User Registered:', newUser);
-
-    // Send a success response
-    res.status(201).json({ 
-        message: 'Account created successfully!', 
-        user: { 
-            id: newUser.id, 
-            username: newUser.username, 
-            email: newUser.email,
-            userType: newUser.userType
-        } 
-    });
 });
 
-module.exports = router;
+export default router;

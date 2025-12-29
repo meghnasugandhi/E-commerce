@@ -1,36 +1,70 @@
-import React from "react";
-import { Container, Row, Col, Form, Button, Card } from "react-bootstrap";
-
-
-// IMPORTANT: This 'loginImage' import is based on your request. 
-// Ensure the path "../assets/login-image.png" is correct in your project structure.
-import loginImage from "../images/login.png";
+import React, { useState } from "react";
+import { Container, Row, Col, Form, Button, Card, Alert } from "react-bootstrap";
+import loginImage from "../images/login.png"; 
 
 const Login = () => {
-  // Inline styles for the CAPTCHA code block for simplicity
-  const captchaStyle = {
-    backgroundColor: '#e6ffe6', // Light green background
-    color: '#3cb371',           // Green text
-    fontWeight: 'bold',
-    fontSize: '1.2rem',
-    padding: '8px',
-    borderRadius: '4px',
-    textAlign: 'center',
-    letterSpacing: '5px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    width: '100px', // Set a fixed width for the captcha box
-    boxShadow: '0 0 5px rgba(0, 0, 0, 0.1)'
+  const [usernameOrEmail, setUsernameOrEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(false);
+    setLoading(true);
+
+    const loginData = {
+      usernameOrEmail: usernameOrEmail,
+      password: password,
+    };
+
+    try {
+      const response = await fetch('http://localhost:5000/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(loginData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // --- JWT LOGIC START ---
+        
+        // 1. Save the token to the browser's storage
+        localStorage.setItem('token', data.token); 
+        
+        // 2. Save user info if you need it for the profile header
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        // --- JWT LOGIC END ---
+
+        setSuccess(true);
+        setUsernameOrEmail('');
+        setPassword('');
+
+        // Redirect after a short delay so the user sees the success message
+        setTimeout(() => {
+            window.location.href = "/dashboard"; // Change this to your home or profile route
+        }, 1500);
+
+      } else {
+        setError(data.message || 'An unknown error occurred during login.');
+      }
+    } catch (err) {
+      setError('Could not connect to the server. Check if the backend is running.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <Container fluid className="vh-100 d-flex justify-content-center align-items-center bg-light">
       <Card className="shadow-lg p-0" style={{ maxWidth: '900px', width: '100%', borderRadius: '15px' }}>
         <Row className="g-0">
-          
-          {/* --- Image Section --- */}
           <Col md={6}>
             <img
               src={loginImage}
@@ -40,42 +74,36 @@ const Login = () => {
             />
           </Col>
           
-          {/* --- Login Form Section --- */}
           <Col md={6} className="p-5">
             <h2 className="mb-1 fw-bold">Login</h2>
             <p className="text-muted mb-4">
-              Don't have an account? <a href="#create" className="text-decoration-none" style={{ color: '#3cb371' }}>**Create here**</a>
+              Don't have an account? <a href="/register" className="text-decoration-none" style={{ color: '#3cb371' }}>Create here</a>
             </p>
 
-            <Form>
-              {/* Username/Email Input */}
+            {success && <Alert variant="success">Login successful! Redirecting...</Alert>}
+            {error && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
+
+            <Form onSubmit={handleSubmit}>
               <Form.Group className="mb-3" controlId="formBasicEmail">
-                <Form.Label className="small">*</Form.Label>
-                <Form.Control type="text" placeholder="Username or Email *" />
+                <Form.Control 
+                  type="text" 
+                  placeholder="Username or Email *" 
+                  value={usernameOrEmail}
+                  onChange={(e) => setUsernameOrEmail(e.target.value)}
+                  required
+                />
               </Form.Group>
 
-              {/* Password Input */}
               <Form.Group className="mb-3" controlId="formBasicPassword">
-                <Form.Label className="small">*</Form.Label>
-                <Form.Control type="password" placeholder="Your password *" />
+                <Form.Control 
+                  type="password" 
+                  placeholder="Your password *" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
               </Form.Group>
 
-              {/* Security Code (CAPTCHA) Row */}
-              <Row className="mb-4 align-items-end">
-                <Col xs={7}>
-                  <Form.Group controlId="formBasicSecurityCode">
-                    <Form.Label className="small">*</Form.Label>
-                    <Form.Control type="text" placeholder="Security code *" />
-                  </Form.Group>
-                </Col>
-                <Col xs={5}>
-                  <div style={captchaStyle}>
-                    8675
-                  </div>
-                </Col>
-              </Row>
-
-              {/* Remember Me and Forgot Password */}
               <Row className="mb-4 align-items-center">
                 <Col xs={6}>
                   <Form.Group controlId="formBasicCheckbox">
@@ -83,19 +111,18 @@ const Login = () => {
                   </Form.Group>
                 </Col>
                 <Col xs={6} className="text-end">
-                  <a href="#forgot" className="small text-muted text-decoration-none">
-                    Forgot password?
-                  </a>
+                  <a href="#forgot" className="small text-muted text-decoration-none">Forgot password?</a>
                 </Col>
               </Row>
 
-              {/* Login Button */}
               <Button 
                 variant="dark" 
                 type="submit" 
-                style={{ backgroundColor: '#212529', borderColor: '#212529', padding: '10px 40px' }}
+                className="w-100"
+                style={{ backgroundColor: '#212529', borderColor: '#212529', padding: '10px 0' }}
+                disabled={loading}
               >
-                Login
+                {loading ? 'Logging in...' : 'Login'}
               </Button>
             </Form>
           </Col>
@@ -105,4 +132,4 @@ const Login = () => {
   );
 };
 
-export default Login; 
+export default Login;
